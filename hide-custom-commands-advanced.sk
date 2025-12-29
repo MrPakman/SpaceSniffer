@@ -19,9 +19,12 @@ options:
 
 # Главное событие - перехват автодополнения
 on tab complete:
-    # Проверяем, есть ли у игрока пермишен на обход
+    # Проверяем, есть ли у игрока пермишен на обход или включен режим просмотра всех команд
     if player has permission {@bypass-permission}:
         # Игрок видит все команды, ничего не делаем
+        stop
+    if {tabcomplete.bypass.%player%} is set:
+        # У игрока включен режим просмотра всех команд через /toggletab
         stop
     
     # Сохраняем оригинальные предложения автодополнения
@@ -42,18 +45,15 @@ on tab complete:
         if {_command} starts with "/":
             set {_command} to subtext of {_command} from character 2 to length of {_command}
         
-        # Извлекаем только название команды (до первого пробела)
+        # Извлекаем только основную команду (до первого пробела)
         if {_command} contains " ":
             set {_parts::*} to {_command} split at " "
             set {_command} to {_parts::1}
         
-        # Убираем пробелы по краям
-        replace all " " in {_command} with ""
-        
         # Флаг для определения ванильной команды
         set {_is-vanilla} to false
         
-        # Проверяем каждую ванильную команду
+        # Проверяем каждую ванильную команду (точное совпадение)
         loop {_vanilla::*}:
             if {_command} is loop-value-2:
                 set {_is-vanilla} to true
@@ -64,13 +64,15 @@ on tab complete:
             add {_suggestion} to tab completions
 
 # Команда для переключения режима для игрока (опционально)
+# Примечание: Эта команда использует переменные для хранения статуса.
+# Для постоянного эффекта используйте систему пермишенов вашего сервера.
 command /toggletab:
     permission: tabcomplete.toggle
     permission message: &cУ вас нет прав для использования этой команды!
     trigger:
-        if player has permission {@bypass-permission}:
-            execute console command "/lp user %player% permission unset {@bypass-permission}"
+        if {tabcomplete.bypass.%player%} is set:
+            delete {tabcomplete.bypass.%player%}
             send "&aРежим скрытия команд включен. Теперь вы видите только ванильные команды." to player
         else:
-            execute console command "/lp user %player% permission set {@bypass-permission} true"
+            set {tabcomplete.bypass.%player%} to true
             send "&aРежим скрытия команд выключен. Теперь вы видите все команды." to player

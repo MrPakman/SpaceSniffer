@@ -34,19 +34,17 @@ on tab complete:
         if {_command} starts with "/":
             set {_command} to subtext of {_command} from character 2 to length of {_command}
         
-        # Убираем пробелы по краям
-        replace all " " in {_command} with ""
+        # Извлекаем только основную команду (до первого пробела)
+        if {_command} contains " ":
+            set {_parts::*} to {_command} split at " "
+            set {_command} to {_parts::1}
         
         # Флаг для определения ванильной команды
         set {_is-vanilla} to false
         
-        # Проверяем каждую ванильную команду
+        # Проверяем каждую ванильную команду (точное совпадение)
         loop {_vanilla::*}:
             if {_command} is loop-value-2:
-                set {_is-vanilla} to true
-                stop loop
-            # Также проверяем начало команды (для подкоманд)
-            if {_command} starts with loop-value-2:
                 set {_is-vanilla} to true
                 stop loop
         

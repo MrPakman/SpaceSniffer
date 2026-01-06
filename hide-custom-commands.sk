@@ -1,0 +1,53 @@
+# Hide Custom Commands from Tab Completion
+# Скрипт для скрытия кастомных команд из автодополнения Tab
+# 
+# Описание: Этот скрипт скрывает все не ванильные команды из автодополнения
+# через Tab, оставляя видимыми только оригинальные команды Minecraft.
+#
+# Установка: Поместите этот файл в папку plugins/Skript/scripts/
+# и перезагрузите скрипты командой /skript reload hide-custom-commands
+#
+# Версия: 1.0
+# Требования: Skript 2.6+ (для поддержки tab complete event)
+
+options:
+    # Полный список ванильных команд Minecraft (Java Edition 1.19+)
+    vanilla-commands: "advancement", "attribute", "ban", "ban-ip", "banlist", "bossbar", "clear", "clone", "data", "datapack", "debug", "defaultgamemode", "deop", "difficulty", "effect", "enchant", "execute", "experience", "fill", "forceload", "function", "gamemode", "gamerule", "give", "help", "kick", "kill", "list", "locate", "loot", "me", "msg", "op", "pardon", "pardon-ip", "particle", "perf", "place", "playsound", "publish", "recipe", "reload", "save-all", "save-off", "save-on", "say", "schedule", "scoreboard", "seed", "setblock", "setidletimeout", "setworldspawn", "spawnpoint", "spectate", "spreadplayers", "stop", "stopsound", "summon", "tag", "team", "teammsg", "teleport", "tell", "tellraw", "time", "title", "tm", "tp", "trigger", "w", "weather", "whitelist", "worldborder", "xp"
+
+# Главное событие - перехват автодополнения
+on tab complete:
+    # Сохраняем оригинальные предложения автодополнения
+    set {_original::*} to tab completions
+    
+    # Очищаем список предложений
+    clear tab completions
+    
+    # Парсим список ванильных команд в массив
+    set {_vanilla::*} to {@vanilla-commands} split at ", "
+    
+    # Проходим по каждому оригинальному предложению
+    loop {_original::*}:
+        set {_suggestion} to loop-value
+        set {_command} to loop-value
+        
+        # Убираем слэш из начала команды для проверки
+        if {_command} starts with "/":
+            set {_command} to subtext of {_command} from character 2 to length of {_command}
+        
+        # Извлекаем только основную команду (до первого пробела)
+        if {_command} contains " ":
+            set {_parts::*} to {_command} split at " "
+            set {_command} to {_parts::1}
+        
+        # Флаг для определения ванильной команды
+        set {_is-vanilla} to false
+        
+        # Проверяем каждую ванильную команду (точное совпадение)
+        loop {_vanilla::*}:
+            if {_command} is loop-value-2:
+                set {_is-vanilla} to true
+                stop loop
+        
+        # Добавляем обратно только ванильные команды
+        if {_is-vanilla} is true:
+            add {_suggestion} to tab completions
